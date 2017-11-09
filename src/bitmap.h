@@ -551,6 +551,41 @@ public:
     T * data() { return d; }
     const T * data() const { return d; }
 
+    Bitmap& operator=(const Bitmap& bit) {
+        if (w != bit.w || h != bit.h)
+            resize(bit.w, bit.h, 0, 0, false);
+        for (unsigned int i = 0; i < h; i++) {
+            for (unsigned int j = 0; j < w; j++) {
+                d[i * w + j] = bit.d[i * w + j];
+            }
+        }
+        return *this;
+    }
+
+    void resize(unsigned int width, unsigned int height, unsigned int offset_i = 0, unsigned int offset_j = 0, bool copy_data = true) {
+        if (width == 0 || height == 0) {
+            w = 0; h = 0;
+            if (d != 0)
+                delete[] d;
+            d = 0;
+            return;
+        }
+        T * tmp = new T[width * height];
+        if (d != 0) {
+            if (copy_data) {
+                for (unsigned int i = 0; i < height && i + offset_i < w; i++) {
+                    for (unsigned int j = 0; j < width && j + offset_j < h; j++) {
+                        tmp[i * width + j] = d[(i + offset_i) * w + j + offset_j];
+                    }
+                }
+            }
+            delete[] d;
+        }
+        d = tmp;
+        w = width;
+        h = height;
+    }
+
 };
 
 #endif
