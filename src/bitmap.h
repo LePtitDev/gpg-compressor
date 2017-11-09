@@ -594,4 +594,4 @@ public:
 
 };
 
-#endif
+#endif // BITMAP_H

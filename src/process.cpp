@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-void Process::toGrayscale(Bitmap<unsigned char>& R, Bitmap<unsigned char>& G, Bitmap<unsigned char>& B, Bitmap<unsigned char>& Y) {
+void Process::toGrayscale(const Bitmap<unsigned char>& R, const Bitmap<unsigned char>& G, const Bitmap<unsigned char>& B, Bitmap<unsigned char>& Y) {
     if (R.width() != Y.width() || R.height() != Y.height())
         Y.resize(R.width(), R.height());
     for (unsigned int i = 0, h = R.height(); i < h; i++) {
@@ -12,7 +12,8 @@ void Process::toGrayscale(Bitmap<unsigned char>& R, Bitmap<unsigned char>& G, Bi
     }
 }
 
-void Process::toYCrCb(Bitmap<unsigned char>& R, Bitmap<unsigned char>& G, Bitmap<unsigned char>& B, Bitmap<float>& Y, Bitmap<float>& Cr, Bitmap<float>& Cb) {
+
+void Process::toYCrCb(const Bitmap<unsigned char>& R, const Bitmap<unsigned char>& G, const Bitmap<unsigned char>& B, Bitmap<float>& Y, Bitmap<float>& Cr, Bitmap<float>& Cb) {
     if (R.width() != Y.width() || R.height() != Y.height())
         Y.resize(R.width(), R.height());
     if (R.width() != Cr.width() || R.height() != Cr.height())
@@ -28,7 +29,7 @@ void Process::toYCrCb(Bitmap<unsigned char>& R, Bitmap<unsigned char>& G, Bitmap
     }
 }
 
-void toRGB(Bitmap<float>& Y, Bitmap<float>& Cr, Bitmap<float>& Cb, Bitmap<unsigned char>& R, Bitmap<unsigned char>& G, Bitmap<unsigned char>& B) {
+void toRGB(const Bitmap<float>& Y, const Bitmap<float>& Cr, const Bitmap<float>& Cb, Bitmap<unsigned char>& R, Bitmap<unsigned char>& G, Bitmap<unsigned char>& B) {
     if (Y.width() != R.width() || Y.height() != R.height())
         R.resize(Y.width(), Y.height());
     if (Y.width() != G.width() || Y.height() != G.height())
