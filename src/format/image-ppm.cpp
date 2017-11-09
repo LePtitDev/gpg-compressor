@@ -29,7 +29,7 @@ bool ImagePPM::load(const char * filename) {
     else if (ext == ".pgm")
         goto pgm_flag;
     else {
-        std::cerr << "\nExtension du fichier " << filename << " incorrecte" << std::endl;
+        std::cerr << "Extension du fichier " << filename << " incorrecte" << std::endl;
         return false;
     }
 ppm_flag:
@@ -46,7 +46,7 @@ ppm_flag:
         for (unsigned int j = 0; j < width; j++) {
             at(i, j).r = dta[i * width * 3 + j * 3];
             at(i, j).g = dta[i * width * 3 + j * 3 + 1];
-            at(i, j).b = dta[i * width * 3 + j * 3 + 1];
+            at(i, j).b = dta[i * width * 3 + j * 3 + 2];
         }
     }
     color = true;
@@ -111,7 +111,7 @@ namespace FormatPPM {
 
         std::ofstream file(filename, std::ios::binary);
         if (!file.is_open()) {
-            std::cerr << "\nPas d'acces en ecriture sur l'image " << filename << std::endl;
+            std::cerr << "Pas d'acces en ecriture sur l'image " << filename << std::endl;
             return false;
         }
         else {
@@ -122,7 +122,7 @@ namespace FormatPPM {
             file << ss.str();
 
             if (!file.write((const char *)data, taille_image)) {
-                std::cerr << "\nErreur d'ecriture de l'image " << filename << std::endl;
+                std::cerr << "Erreur d'ecriture de l'image " << filename << std::endl;
                 return false;
             }
             file.close();
@@ -135,7 +135,7 @@ namespace FormatPPM {
         
         std::ifstream file(filename, std::ios::binary);
         if (!file.is_open()) {
-            std::cerr << "\nPas d'acces en lecture sur l'image " << filename << std::endl;
+            std::cerr << "Pas d'acces en lecture sur l'image " << filename << std::endl;
             return false;
         }
         else {
@@ -166,7 +166,7 @@ namespace FormatPPM {
             *data = new unsigned char[taille_image];
             if (!file.read((char *)*data, taille_image)) {
                 delete[] data;
-                std::cerr << "\nErreur de lecture de l'image " << filename << std::endl;
+                std::cerr << "Erreur de lecture de l'image " << filename << std::endl;
                 return false;
             }
             file.close();
@@ -179,7 +179,7 @@ namespace FormatPPM {
         
         std::ofstream file(filename, std::ios::binary);
         if (!file.is_open()) {
-            std::cerr << "\nPas d'acces en ecriture sur l'image " << filename << std::endl;
+            std::cerr << "Pas d'acces en ecriture sur l'image " << filename << std::endl;
             return false;
         }
         else {
@@ -190,7 +190,7 @@ namespace FormatPPM {
             file << ss.str();
 
             if (!file.write((const char *)data, taille_image)) {
-                std::cerr << "\nErreur d'ecriture de l'image " << filename << std::endl;
+                std::cerr << "Erreur d'ecriture de l'image " << filename << std::endl;
                 return false;
             }
             file.close();
@@ -203,7 +203,7 @@ namespace FormatPPM {
         
         std::ifstream file(filename, std::ios::binary);
         if (!file.is_open()) {
-            std::cerr << "\nPas d'acces en lecture sur l'image " << filename << std::endl;
+            std::cerr << "Pas d'acces en lecture sur l'image " << filename << std::endl;
             return false;
         }
         else {
@@ -228,7 +228,7 @@ namespace FormatPPM {
             *data = new unsigned char[taille_image];
             if (!file.read((char *)*data, taille_image)) {
                 delete[] data;
-                std::cerr << "\nErreur de lecture de l'image " << filename << std::endl;
+                std::cerr << "Erreur de lecture de l'image " << filename << std::endl;
                 return false;
             }
             file.close();

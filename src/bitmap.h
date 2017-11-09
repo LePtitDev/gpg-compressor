@@ -567,6 +567,18 @@ public:
         }
         return *this;
     }
+    
+    template <typename K>
+    Bitmap& operator=(const Bitmap<K>& bit) {
+        if (w != bit.width() || h != bit.height())
+            resize(bit.width(), bit.height(), 0, 0, false);
+        for (unsigned int i = 0; i < h; i++) {
+            for (unsigned int j = 0; j < w; j++) {
+                d[i * w + j] = bit.data()[i * w + j];
+            }
+        }
+        return *this;
+    }
 
     void resize(unsigned int width, unsigned int height, unsigned int offset_i = 0, unsigned int offset_j = 0, bool copy_data = true) {
         if (width == 0 || height == 0) {

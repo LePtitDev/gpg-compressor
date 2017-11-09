@@ -49,6 +49,36 @@ public:
     Bitmap<unsigned char> getRed() const { return getColor(0); }
     Bitmap<unsigned char> getGreen() const { return getColor(1); }
     Bitmap<unsigned char> getBlue() const { return getColor(2); }
+    void setRed(const Bitmap<unsigned char>& map) {
+        if (width() != map.width() || height() != map.height())
+            resize(map.width(), map.height());
+        for (unsigned int i = 0, h = height(); i < h; i++) {
+            for (unsigned int j = 0, w = height(); j < w; j++) {
+                at(i, j).r = map[i][j];
+            }
+        }
+        color = true;
+    }
+    void setGreen(const Bitmap<unsigned char>& map) {
+        if (width() != map.width() || height() != map.height())
+            resize(map.width(), map.height());
+        for (unsigned int i = 0, h = height(); i < h; i++) {
+            for (unsigned int j = 0, w = height(); j < w; j++) {
+                at(i, j).g = map[i][j];
+            }
+        }
+        color = true;
+    }
+    void setBlue(const Bitmap<unsigned char>& map) {
+        if (width() != map.width() || height() != map.height())
+            resize(map.width(), map.height());
+        for (unsigned int i = 0, h = height(); i < h; i++) {
+            for (unsigned int j = 0, w = height(); j < w; j++) {
+                at(i, j).b = map[i][j];
+            }
+        }
+        color = true;
+    }
 
     Image& operator=(const Bitmap<unsigned char>& map) {
         if (width() != map.width() || height() != map.height())
