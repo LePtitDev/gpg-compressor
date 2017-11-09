@@ -31,6 +31,9 @@ public:
         iterator(Bitmap * b, int i = 0, int j = 0, PARCOURS_MODE mode = HORIZONTAL_MODE) : i(i), j(j), bitmap(b), mode(mode) {}
         iterator(const iterator& it) : i(it.i), j(it.j), bitmap(it.bitmap) {}
 
+        int line() const { return i; }
+        int column() const { return j; }
+
         T * operator*() { return bitmap ? (&bitmap->at((unsigned int)i, (unsigned int)j)) : 0; }
         const T * operator*() const { return bitmap ? (&bitmap->at((unsigned int)i, (unsigned int)j)) : 0; }
 
@@ -287,6 +290,9 @@ public:
         const_iterator(const Bitmap * b, int i = 0, int j = 0, PARCOURS_MODE mode = HORIZONTAL_MODE) : i(i), j(j), bitmap(b), mode(mode) {}
         const_iterator(const const_iterator& it) : i(it.i), j(it.j), bitmap(it.bitmap) {}
 
+        int line() const { return i; }
+        int column() const { return j; }
+        
         const T * operator*() const { return bitmap ? (&bitmap->at((unsigned int)i, (unsigned int)j)) : 0; }
         const T * operator->() const { return bitmap ? (&bitmap->at((unsigned int)i, (unsigned int)j)) : 0; }
 
