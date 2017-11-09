@@ -58,6 +58,7 @@ public:
                 at(i, j).r = map[i][j];
             }
         }
+        color = false;
         return *this;
     }
 

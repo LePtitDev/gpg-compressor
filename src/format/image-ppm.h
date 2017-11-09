@@ -13,6 +13,18 @@ public:
 
     bool load(const char * filename);
     bool save(const char * filename);
+    
+    ImagePPM& operator=(const Bitmap<unsigned char>& map) {
+        if (width() != map.width() || height() != map.height())
+            resize(map.width(), map.height());
+        for (unsigned int i = 0, h = height(); i < h; i++) {
+            for (unsigned int j = 0, w = height(); j < w; j++) {
+                at(i, j).r = map[i][j];
+            }
+        }
+        color = false;
+        return *this;
+    }
 
 };
 

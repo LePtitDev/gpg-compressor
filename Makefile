@@ -1,9 +1,10 @@
-EXECUTABLE = build/main
+EXECUTABLE = debug/main
 FLAGS = -std=c++11
 
 define HEAD_FILES
 	src/bitmap.h \
 	src/process.h \
+	src/huffman.h \
 	src/filter.h \
 	src/image.h \
 	src/format/image-ppm.h
