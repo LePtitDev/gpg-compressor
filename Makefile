@@ -1,4 +1,5 @@
-EXECUTABLE = debug/main
+TARGET = main
+BINDIR = bin
 FLAGS = -std=c++11
 
 define HEAD_FILES
@@ -16,5 +17,8 @@ define SRC_FILES
 	src/format/image-ppm.cpp
 endef
 
-all: $(HEAD_FILES) $(SRC_FILES)
-	g++ $(SRC_FILES) -o $(EXECUTABLE) $(FLAGS)
+all: $(BINDIR) $(HEAD_FILES) $(SRC_FILES)
+	g++ $(SRC_FILES) -o $(BINDIR)/$(TARGET) $(FLAGS)
+
+$(BINDIR):
+	mkdir "$(BINDIR)"
