@@ -592,6 +592,11 @@ public:
         h = height;
     }
 
+    void fill(const T * datas, unsigned int count) {
+        for (unsigned int i = 0, max = w * h; i < count && i < max; i++)
+            d[i] = datas[i];
+    }
+
 };
 
 #endif // BITMAP_H

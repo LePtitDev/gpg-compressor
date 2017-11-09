@@ -1,16 +1,19 @@
 #include <iostream>
 #include <vector>
 
-#include "bitmap.h"
 #include "process.h"
-#include "filter.h"
+#include "format/image-ppm.h"
 
 int main(int argc, char * argv[]) {
-    Bitmap<unsigned char> a(10, 10), b;
-    for (int i = 0; i < 10; i++)
-        for (int j = 0; j < 10; j++)
-            a[i][j] = i * 10 + j;
-    Filter::up(a, b);
+    ImagePPM img;
+    img.load("res/coati.ppm");
+    ImagePPM out(0, 0, false);
+    Bitmap<unsigned char> red = img.getColor(0);
+    out.resize(red.width(), red.height());
+    for (unsigned int i = 0, h = red.width(); i < h; i++)
+        for (unsigned int j = 0, w = red.width(); j < w; j++)
+            out[i][j].r = red[i][j];
+    out.save("result.pgm");
 
     return 0;
 }
