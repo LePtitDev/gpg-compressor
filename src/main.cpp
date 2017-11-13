@@ -16,12 +16,14 @@ int main(int argc, char * argv[]) {
     imIn.load(argv[2]);
     ImagePPM imOut(imIn.width(), imIn.height());
     if (argv[1][1] == 'c') {
-        Bitmap<float> Y, YMean, YDif, Cr, Cr2, Cb, Cb2;
+        Bitmap<float> Y, YMean, YDiff, Cr, Cr2, Cb, Cb2;
         Process::toYCrCb(imIn.getRed(), imIn.getGreen(), imIn.getBlue(), Y, Cr, Cb);
+        Process::filterMean(Y, YMean);
+        Process::filterSub(Y, YDiff);
+        Y.fill(YMean);
+        Y.fill(YDiff, YDiff.width());
         Process::Reduce2(Cr, Cr2);
         Process::Reduce2(Cb, Cb2);
-        //Process::filterMean(Y, YMean);
-        //Process::filterSub(Y, YDif);
         Cr2.resize(Cr.width(), Cr.height());
         Cb2.resize(Cb.width(), Cb.height());
         Bitmap<unsigned char> R, G, B;
@@ -33,8 +35,11 @@ int main(int argc, char * argv[]) {
         imOut.setBlue(B);
     }
     else if (argv[1][1] == 'd') {
-        Bitmap<float> Y, Cr, Cr2, Cb, Cb2;
+        Bitmap<float> Y, YMean, YDiff, Cr, Cr2, Cb, Cb2;
         Y = imIn.getRed();
+        Y.copy(YMean, Y.width() / 2, Y.height());
+        Y.copy(YDiff, Y.width() / 2, Y.height(), Y.width() / 2);
+        Process::invertFilter(YMean, YDiff, Y);
         Process::Unquantify(imIn.getGreen(), Cr2, 7);
         Process::Unquantify(imIn.getBlue(), Cb2, 7);
         Cr2.resize(Y.width() / 2, Y.height() / 2);

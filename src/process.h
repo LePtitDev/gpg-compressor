@@ -31,6 +31,10 @@ namespace Process {
     
     void filterMeanUp(const Bitmap<float>& in, Bitmap<float>& out);
 
+    void invertFilter(const Bitmap<float>& mean, const Bitmap<float>& sub, Bitmap<float>& out);
+    
+    void invertFilterUp(const Bitmap<float>& mean, const Bitmap<float>& sub, Bitmap<float>& out);
+
 }
 
 #endif // PROCESS_H

@@ -112,7 +112,7 @@ void Process::filterSub(const Bitmap<float>& in, Bitmap<float>& out) {
         out.resize(in.width() / 2, in.height());
     for (unsigned int i = 0, h = out.height(); i < h; i++) {
         for (unsigned int j = 0, w = out.width(); j < w; j++) {
-            out[i][j] = (float)in[i][j * 2 + 1] - (float)in[i][j * 2] + 128.0f;
+            out[i][j] = in[i][j * 2 + 1] - in[i][j * 2] + 128.0f;
         }
     }
 }
@@ -122,7 +122,7 @@ void Process::filterUp(const Bitmap<float>& in, Bitmap<float>& out) {
         out.resize(in.width(), in.height() / 2);
     for (unsigned int i = 0, h = out.height(); i < h; i++) {
         for (unsigned int j = 0, w = out.width(); j < w; j++) {
-            out[i][j] = (float)in[i * 2 + 1][j] - (float)in[i * 2][j] + 128.0f;
+            out[i][j] = in[i * 2 + 1][j] - in[i * 2][j] + 128.0f;
         }
     }
 }
@@ -132,7 +132,7 @@ void Process::filterMean(const Bitmap<float>& in, Bitmap<float>& out) {
         out.resize(in.width() / 2, in.height());
     for (unsigned int i = 0, h = out.height(); i < h; i++) {
         for (unsigned int j = 0, w = out.width(); j < w; j++) {
-            out[i][j] = 0.5f * (float)in[i][j * 2] + 0.5f * (float)in[i][j * 2 + 1];
+            out[i][j] = 0.5f * in[i][j * 2] + 0.5f * in[i][j * 2 + 1];
         }
     }
 }
@@ -142,7 +142,29 @@ void Process::filterMeanUp(const Bitmap<float>& in, Bitmap<float>& out) {
         out.resize(in.width(), in.height() / 2);
     for (unsigned int i = 0, h = out.height(); i < h; i++) {
         for (unsigned int j = 0, w = out.width(); j < w; j++) {
-            out[i][j] = 0.5f * (float)in[i * 2][j] + 0.5f * (float)in[i * 2 + 1][j];
+            out[i][j] = 0.5f * in[i * 2][j] + 0.5f * in[i * 2 + 1][j];
+        }
+    }
+}
+
+void Process::invertFilter(const Bitmap<float>& mean, const Bitmap<float>& sub, Bitmap<float>& out) {
+    if (mean.width() * 2 != out.width() || mean.height() != out.height())
+        out.resize(mean.width() * 2, mean.height());
+    for (unsigned int i = 0, h = out.height(); i < h; i++) {
+        for (unsigned int j = 0, w = mean.width(); j < w; j++) {
+            out[i][j * 2] = mean[i][j] - (sub[i][j] - 128.0f) / 2.0f;
+            out[i][j * 2 + 1] = mean[i][j] + (sub[i][j] - 128.0f) / 2.0f;
+        }
+    }
+}
+
+void Process::invertFilterUp(const Bitmap<float>& mean, const Bitmap<float>& up, Bitmap<float>& out) {
+    if (mean.width() != out.width() || mean.height() * 2 != out.height())
+        out.resize(mean.width(), mean.height() * 2);
+    for (unsigned int i = 0, h = mean.height(); i < h; i++) {
+        for (unsigned int j = 0, w = out.width(); j < w; j++) {
+            out[i * 2][j] = mean[i][j] - (up[i][j] - 128.0f) / 2.0f;
+            out[i * 2 + 1][j] = mean[i][j] + (up[i][j] - 128.0f) / 2.0f;
         }
     }
 }

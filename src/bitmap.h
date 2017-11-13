@@ -1,6 +1,7 @@
 #ifndef BITMAP_H
 #define BITMAP_H
 
+#include <iostream>
 #include <iterator>
 
 template <typename T>
@@ -607,6 +608,24 @@ public:
     void fill(const T * datas, unsigned int count) {
         for (unsigned int i = 0, max = w * h; i < count && i < max; i++)
             d[i] = datas[i];
+    }
+
+    void fill(const Bitmap& map, unsigned int offset_j = 0, unsigned int offset_i = 0) {
+        for (int i = 0, _h = ((int)map.height() <= ((int)h - (int)offset_i) ? (int)map.height() : (int)h - (int)offset_i); i < _h; i++) {
+            for (int j = 0, _w = ((int)map.width() <= ((int)w - (int)offset_j) ? (int)map.width() : (int)w - (int)offset_j); j < _w; j++) {
+                at((unsigned int)i + offset_i, (unsigned int)j + offset_j) = map[(unsigned int)i][(unsigned int)j];
+            }
+        }
+    }
+
+    void copy(Bitmap& map, unsigned int width, unsigned int height, unsigned int offset_j = 0, unsigned int offset_i = 0) {
+        if (map.width() != width || map.height() != height)
+            map.resize(width, height);
+        for (int i = 0, _h = ((int)height <= ((int)h - (int)offset_i) ? (int)height : (int)h - (int)offset_i); i < _h; i++) {
+            for (int j = 0, _w = ((int)width <= ((int)w - (int)offset_j) ? (int)width : (int)w - (int)offset_j); j < _w; j++) {
+                map[(unsigned int)i][(unsigned int)j] = at((unsigned int)i + offset_i, (unsigned int)j + offset_j);
+            }
+        }
     }
 
 };
