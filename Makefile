@@ -6,7 +6,6 @@ define HEAD_FILES
 	src/bitmap.h \
 	src/process.h \
 	src/huffman.h \
-	src/filter.h \
 	src/image.h \
 	src/format/image-ppm.h
 endef
