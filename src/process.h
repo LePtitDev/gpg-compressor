@@ -23,6 +23,10 @@ namespace Process {
     
     void Unquantify(const Bitmap<unsigned char>& in, Bitmap<float>& out, unsigned int N);
 
+    void LogQuantify(const Bitmap<float>& in, Bitmap<unsigned char>& out, unsigned int N);
+
+    void LogUnquantify(const Bitmap<unsigned char>& in, Bitmap<float>& out, unsigned int N);
+
     void filterSub(const Bitmap<float>& in, Bitmap<float>& out);
     
     void filterUp(const Bitmap<float>& in, Bitmap<float>& out);
