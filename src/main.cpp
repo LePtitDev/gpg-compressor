@@ -64,7 +64,17 @@ int main(int argc, char * argv[]) {
     }
     else {
         imOut.load(argv[3]);
-        std::cout << "PSNR = " << Process::calculatePSNR(imIn.getGrayscale(), imOut.getGrayscale()) << std::endl;
+        Bitmap<unsigned char> R1, G1, B1, Y1,
+                              R2, G2, B2, Y2;
+        R1 = imIn.getRed();
+        G1 = imIn.getGreen();
+        B1 = imIn.getBlue();
+        R2 = imOut.getRed();
+        G2 = imOut.getGreen();
+        B2 = imOut.getBlue();
+        Process::toGrayscale(R1, G1, B1, Y1);
+        Process::toGrayscale(R2, G2, B2, Y2);
+        std::cout << "PSNR = " << Process::calculatePSNR(Y1, Y2) << std::endl;
     }
     imOut.save(argv[3]);
 
