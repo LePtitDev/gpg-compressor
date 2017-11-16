@@ -123,6 +123,22 @@ void Process::LogQuantify(const Bitmap<float>& in, Bitmap<unsigned char>& out, u
     }
 }
 
+void Process::LogQuantify2(const Bitmap<float>& in, Bitmap<unsigned char>& out, unsigned int N) {
+    if (in.width() != out.width() || in.height() != out.height())
+        out.resize(in.width(), in.height());
+    float count = (float)(1 << (N - 1));
+    for (unsigned int i = 0, h = in.height(); i < h; i++) {
+        for (unsigned int j = 0, w = in.width(); j < w; j++) {
+            if (in[i][j] > 128.0f)
+                out[i][j] = (unsigned int)(64.0f * (std::log2(in[i][j] - 128.0f) + 1.0f) / count + count);
+            else if (in[i][j] < 128.0f)
+                out[i][j] = (unsigned int)(count - 64.0f * (std::log2(128.0f - in[i][j]) + 1.0f) / count);
+            else
+                out[i][j] = (unsigned int)count;
+        }
+    }
+}
+
 void Process::LogUnquantify(const Bitmap<unsigned char>& in, Bitmap<float>& out, unsigned int N) {
     if (in.width() != out.width() || in.height() != out.height())
         out.resize(in.width(), in.height());
@@ -137,6 +153,24 @@ void Process::LogUnquantify(const Bitmap<unsigned char>& in, Bitmap<float>& out,
                 out[i][j] = 128.0f + std::pow(2.0f, ((float)(in[i][j] - C)) * den);
             else
                 out[i][j] = 128.0f - std::pow(2.0f, ((float)(C - in[i][j])) * den);
+        }
+    }
+}
+
+void Process::LogUnquantify2(const Bitmap<unsigned char>& in, Bitmap<float>& out, unsigned int N) {
+    if (in.width() != out.width() || in.height() != out.height())
+        out.resize(in.width(), in.height());
+    float count = (float)(1 << (N - 1));
+    unsigned char C = (1 << (N - 1));
+    float den = 7.0f / count;
+    for (unsigned int i = 0, h = in.height(); i < h; i++) {
+        for (unsigned int j = 0, w = in.width(); j < w; j++) {
+            if (in[i][j] == C)
+                out[i][j] = 128.0f;
+            else if (in[i][j] > C)
+                out[i][j] = 128.0f + 2.0f * std::pow(2.0f, ((float)(in[i][j] - C)) * den);
+            else
+                out[i][j] = 128.0f - 2.0f * std::pow(2.0f, ((float)(C - in[i][j])) * den);
         }
     }
 }
