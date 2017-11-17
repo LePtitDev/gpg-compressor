@@ -20,9 +20,10 @@ int main(int argc, char * argv[]) {
         Process::toYCrCb(imIn.getRed(), imIn.getGreen(), imIn.getBlue(), Y, Cr, Cb);
         Process::filterMean(Y, YMean);
         Process::filterSub(Y, YDiff);
-        Bitmap<unsigned char> YMeanQ, YDiffQ;
+        Bitmap<unsigned char> YMeanQ, YDiffQ, YDiffQ2;
         Process::Quantify(YMean, YMeanQ, 7);
-        Process::LogQuantify(YDiff, YDiffQ, 6);
+        Process::LogQuantify(YDiff, YDiffQ2, 6);
+        Process::ReduceQuantify(YDiffQ2, YDiffQ, 2);
         YMean = YMeanQ;
         YDiff = YDiffQ;
         Y.fill(YMean);
@@ -44,11 +45,12 @@ int main(int argc, char * argv[]) {
         Y = imIn.getRed();
         Y.copy(YMean, Y.width() / 2, Y.height());
         Y.copy(YDiff, Y.width() / 2, Y.height(), Y.width() / 2);
-        Bitmap<unsigned char> YMeanQ, YDiffQ;
+        Bitmap<unsigned char> YMeanQ, YDiffQ, YDiffQ2;
         YMeanQ = YMean;
         YDiffQ = YDiff;
         Process::Unquantify(YMeanQ, YMean, 7);
-        Process::LogUnquantify(YDiffQ, YDiff, 6);
+        Process::EnlargeQuantify(YDiffQ, YDiffQ2, 2);
+        Process::LogUnquantify(YDiffQ2, YDiff, 6);
         Process::invertFilter(YMean, YDiff, Y);
         Process::Unquantify(imIn.getGreen(), Cr2, 7);
         Process::Unquantify(imIn.getBlue(), Cb2, 7);

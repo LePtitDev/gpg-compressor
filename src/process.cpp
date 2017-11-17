@@ -99,12 +99,32 @@ void Process::Quantify(const Bitmap<float>& in, Bitmap<unsigned char>& out, unsi
     }
 }
 
+void Process::ReduceQuantify(const Bitmap<unsigned char>& in, Bitmap<unsigned char>& out, unsigned int N) {
+    if (in.width() != out.width() || in.height() != out.height())
+        out.resize(in.width(), in.height());
+    for (unsigned int i = 0, h = in.height(); i < h; i++) {
+        for (unsigned int j = 0, w = in.width(); j < w; j++) {
+            out[i][j] = in[i][j] >> N;
+        }
+    }
+}
+
 void Process::Unquantify(const Bitmap<unsigned char>& in, Bitmap<float>& out, unsigned int N) {
     if (in.width() != out.width() || in.height() != out.height())
         out.resize(in.width(), in.height());
     for (unsigned int i = 0, h = in.height(); i < h; i++) {
         for (unsigned int j = 0, w = in.width(); j < w; j++) {
             out[i][j] = (float)(in[i][j] << (8 - N));
+        }
+    }
+}
+    
+void Process::EnlargeQuantify(const Bitmap<unsigned char>& in, Bitmap<unsigned char>& out, unsigned int N) {
+    if (in.width() != out.width() || in.height() != out.height())
+        out.resize(in.width(), in.height());
+    for (unsigned int i = 0, h = in.height(); i < h; i++) {
+        for (unsigned int j = 0, w = in.width(); j < w; j++) {
+            out[i][j] = in[i][j] << N;
         }
     }
 }

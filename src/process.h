@@ -22,8 +22,12 @@ namespace Process {
     void Enlarge2(const Bitmap<float>& in, Bitmap<float>& out);
 
     void Quantify(const Bitmap<float>& in, Bitmap<unsigned char>& out, unsigned int N);
+
+    void ReduceQuantify(const Bitmap<unsigned char>& in, Bitmap<unsigned char>& out, unsigned int N);
     
     void Unquantify(const Bitmap<unsigned char>& in, Bitmap<float>& out, unsigned int N);
+    
+    void EnlargeQuantify(const Bitmap<unsigned char>& in, Bitmap<unsigned char>& out, unsigned int N);
 
     void LogQuantify(const Bitmap<float>& in, Bitmap<unsigned char>& out, unsigned int N);
 
