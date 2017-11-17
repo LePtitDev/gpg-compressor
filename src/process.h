@@ -3,6 +3,8 @@
 
 #include "bitmap.h"
 
+#include <vector>
+
 namespace Process {
 
     void toGrayscale(const Bitmap<unsigned char>& R, const Bitmap<unsigned char>& G, const Bitmap<unsigned char>& B, Bitmap<unsigned char>& Y);
@@ -42,6 +44,18 @@ namespace Process {
     void invertFilter(const Bitmap<float>& mean, const Bitmap<float>& sub, Bitmap<float>& out);
     
     void invertFilterUp(const Bitmap<float>& mean, const Bitmap<float>& sub, Bitmap<float>& out);
+
+    unsigned int huffman(const Bitmap<unsigned char>& in, std::vector<bool>& out, unsigned int N = 8);
+
+    unsigned int invertHuffman(const std::vector<bool>& in, Bitmap<unsigned char>& out, unsigned int width, unsigned int height, unsigned int N = 8);
+
+    void grayCoding(const Bitmap<unsigned char>& in, Bitmap<unsigned char>& out);
+
+    void invertGrayCoding(const Bitmap<unsigned char>& in, Bitmap<unsigned char>& out);
+
+    void getBinary(const Bitmap<unsigned char>& in, Bitmap<unsigned char>& out, unsigned int N = 0);
+
+    void setBinary(const Bitmap<unsigned char>& in, Bitmap<unsigned char>& out, unsigned int N = 0);
 
 }
 

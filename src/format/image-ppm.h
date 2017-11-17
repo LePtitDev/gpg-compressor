@@ -18,7 +18,7 @@ public:
         if (width() != map.width() || height() != map.height())
             resize(map.width(), map.height());
         for (unsigned int i = 0, h = height(); i < h; i++) {
-            for (unsigned int j = 0, w = height(); j < w; j++) {
+            for (unsigned int j = 0, w = width(); j < w; j++) {
                 at(i, j).r = map[i][j];
             }
         }

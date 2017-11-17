@@ -92,7 +92,7 @@ class Huffman {
         }
 
         // Read the tree content
-        static Node * read(std::vector<bool>& stream, unsigned int& it, unsigned int elem_size = N) {
+        static Node * read(const std::vector<bool>& stream, unsigned int& it, unsigned int elem_size = N) {
             Node * node = new Node();
             if (stream[it++] == 1) {
                 node->value = std::move(std::unique_ptr<std::bitset<N>>(new std::bitset<N>()));
@@ -130,13 +130,13 @@ class Huffman {
 public:
 
     // Create a frequency tree
-    void create(const void * data, std::size_t count) {
+    void create(const void * data, std::size_t count, unsigned int elem_size = N) {
         std::array<unsigned int, 1 << N> freqs;
         for (unsigned int i = 0; i < (1 << N); i++)
             freqs[i] = 0;
         for (unsigned int i = 0; i < count; i++) {
             std::bitset<N> elem;
-            for (unsigned int j = 0; j < N; j++) {
+            for (unsigned int j = 0; j < elem_size; j++) {
                 unsigned long nbB = (unsigned long)i * (unsigned long)N + (unsigned long)j;
                 elem[j] = (((unsigned char *)data)[(unsigned int)(nbB / (unsigned long)8)] >> (nbB % 8)) & 0x1;
             }
@@ -190,7 +190,7 @@ public:
     }
 
     // Read frequency tree
-    unsigned int read(std::vector<bool>& stream, unsigned int elem_size = N) {
+    unsigned int read(const std::vector<bool>& stream, unsigned int elem_size = N) {
         unsigned int it = 0;
         ftree = std::move(std::unique_ptr<Node>(Huffman<N>::Node::read(stream, it, elem_size)));
         reload_codes();
@@ -198,7 +198,7 @@ public:
     }
 
     // Read data content with frequency tree
-    unsigned int read(std::vector<bool>& stream, void * data, std::size_t count) {
+    unsigned int read(const std::vector<bool>& stream, void * data, std::size_t count) {
         unsigned int it = 0;
         for (unsigned int i = 0; i < count; i++) {
             std::reference_wrapper<Node> current = *ftree;
