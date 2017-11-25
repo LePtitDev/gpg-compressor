@@ -123,6 +123,7 @@ namespace FormatPPM {
 
             if (!file.write((const char *)data, taille_image)) {
                 std::cerr << "Erreur d'ecriture de l'image " << filename << std::endl;
+                file.close();
                 return false;
             }
             file.close();
@@ -167,6 +168,7 @@ namespace FormatPPM {
             if (!file.read((char *)*data, taille_image)) {
                 delete[] data;
                 std::cerr << "Erreur de lecture de l'image " << filename << std::endl;
+                file.close();
                 return false;
             }
             file.close();
@@ -191,6 +193,7 @@ namespace FormatPPM {
 
             if (!file.write((const char *)data, taille_image)) {
                 std::cerr << "Erreur d'ecriture de l'image " << filename << std::endl;
+                file.close();
                 return false;
             }
             file.close();
@@ -215,13 +218,19 @@ namespace FormatPPM {
             std::string stmp;
             stmp += ignore_comments(file);
             char c;
-            while ((c = file.get()) != '\r' && c != ' ') stmp += c;
+            if ((c = file.get()) != '\n')
+                stmp += c;
+            while ((c = file.get()) != '\r' && c != '\n' && c != ' ') stmp += c;
             *width = std::atoi(stmp.c_str());
             stmp.clear();
-            while ((c = file.get()) != '\r' && c != ' ') stmp += c;
+            if ((c = file.get()) != '\n')
+                stmp += c;
+            while ((c = file.get()) != '\r' && c != '\n' && c != ' ') stmp += c;
             *height = std::atoi(stmp.c_str());
             stmp.clear();
-            while ((c = file.get()) != '\r' && c != ' ') stmp += c;
+            if ((c = file.get()) != '\n')
+                stmp += c;
+            while ((c = file.get()) != '\r' && c != '\n' && c != ' ') stmp += c;
             max_grey_val = std::atoi(stmp.c_str());
 
             int taille_image = (*width) * (*height);
@@ -229,6 +238,7 @@ namespace FormatPPM {
             if (!file.read((char *)*data, taille_image)) {
                 delete[] data;
                 std::cerr << "Erreur de lecture de l'image " << filename << std::endl;
+                file.close();
                 return false;
             }
             file.close();

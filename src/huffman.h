@@ -183,10 +183,10 @@ public:
                 elem[j] = (((unsigned char *)data)[(unsigned int)(nbB / (unsigned long)8)] >> (nbB % 8)) & 0x1;
             }
             std::vector<bool>& code = codes[elem.to_ulong()];
-            for (unsigned int i = 0, sz = code.size(); i < sz; i++)
+            for (unsigned int i = 0, _sz = code.size(); i < _sz; i++)
                 stream.push_back(code[i]);
         }
-        return sz;
+        return stream.size() - sz;
     }
 
     // Read frequency tree
