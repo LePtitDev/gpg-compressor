@@ -4,6 +4,7 @@ FLAGS = -std=c++11
 
 define HEAD_FILES
 	src/bitmap.h \
+	src/stream.h \
 	src/process.h \
 	src/huffman.h \
 	src/image.h \

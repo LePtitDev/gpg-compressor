@@ -1,70 +1,31 @@
 #include <iostream>
+#include <fstream>
 
 #include "format/image-ppm.h"
 #include "process.h"
+#include "stream.h"
+
+using namespace LiteScript;
+
+void compress(const char * infile, const char * outfile);
+void decompress(const char * infile, const char * outfile);
 
 int main(int argc, char * argv[]) {
     if (argc < 4) {
         std::cerr << "usage : " << argv[0] << " -[c|d|p] <input.[pgm|ppm]> <output.[pgm|ppm]>" << std::endl;
         std::cerr << "- c : compress" << std::endl;
         std::cerr << "- d : decompress" << std::endl;
-        std::cerr << "- p : psnr calculate" << std::endl;
         return -1;
     }
 
-    ImagePPM imIn;
-    imIn.load(argv[2]);
-    ImagePPM imOut(imIn.width(), imIn.height());
-    if (argv[1][1] == 'c') {
-        Bitmap<float> Y, YMean, YDiff, Cr, Cr2, Cb, Cb2;
-        Process::toYCrCb(imIn.getRed(), imIn.getGreen(), imIn.getBlue(), Y, Cr, Cb);
-        Process::filterMean(Y, YMean);
-        Process::filterSub(Y, YDiff);
-        Bitmap<unsigned char> YMeanQ, YDiffQ, YDiffQ2;
-        Process::Quantify(YMean, YMeanQ, 7);
-        Process::LogQuantify(YDiff, YDiffQ2, 6);
-        Process::ReduceQuantify(YDiffQ2, YDiffQ, 2);
-        YMean = YMeanQ;
-        YDiff = YDiffQ;
-        Y.fill(YMean);
-        Y.fill(YDiff, YDiff.width());
-        Process::Reduce2(Cr, Cr2);
-        Process::Reduce2(Cb, Cb2);
-        Cr2.resize(Cr.width(), Cr.height());
-        Cb2.resize(Cb.width(), Cb.height());
-        Bitmap<unsigned char> R, G, B;
-        R = Y;
-        Process::Quantify(Cr2, G, 7);
-        Process::Quantify(Cb2, B, 7);
-        imOut.setRed(R);
-        imOut.setGreen(G);
-        imOut.setBlue(B);
-    }
-    else if (argv[1][1] == 'd') {
-        Bitmap<float> Y, YMean, YDiff, Cr, Cr2, Cb, Cb2;
-        Y = imIn.getRed();
-        Y.copy(YMean, Y.width() / 2, Y.height());
-        Y.copy(YDiff, Y.width() / 2, Y.height(), Y.width() / 2);
-        Bitmap<unsigned char> YMeanQ, YDiffQ, YDiffQ2;
-        YMeanQ = YMean;
-        YDiffQ = YDiff;
-        Process::Unquantify(YMeanQ, YMean, 7);
-        Process::EnlargeQuantify(YDiffQ, YDiffQ2, 2);
-        Process::LogUnquantify(YDiffQ2, YDiff, 6);
-        Process::invertFilter(YMean, YDiff, Y);
-        Process::Unquantify(imIn.getGreen(), Cr2, 7);
-        Process::Unquantify(imIn.getBlue(), Cb2, 7);
-        Cr2.resize(Y.width() / 2, Y.height() / 2);
-        Cb2.resize(Y.width() / 2, Y.height() / 2);
-        Process::Enlarge2(Cr2, Cr);
-        Process::Enlarge2(Cb2, Cb);
-        Bitmap<unsigned char> R, G, B;
-        Process::toRGB(Y, Cr, Cb, R, G, B);
-        imOut.setRed(R);
-        imOut.setGreen(G);
-        imOut.setBlue(B);
-    }
+    if (argv[1][1] == 'c')
+        compress(argv[2], argv[3]);
+    else if (argv[1][1] == 'd')
+        decompress(argv[2], argv[3]);
     else {
+        ImagePPM imIn;
+        imIn.load(argv[2]);
+        ImagePPM imOut(imIn.width(), imIn.height());
         imOut.load(argv[3]);
         Bitmap<unsigned char> R1, G1, B1, Y1,
                               R2, G2, B2, Y2;
@@ -78,7 +39,143 @@ int main(int argc, char * argv[]) {
         Process::toGrayscale(R2, G2, B2, Y2);
         std::cout << "PSNR = " << Process::calculatePSNR(Y1, Y2) << std::endl;
     }
-    imOut.save(argv[3]);
 
     return 0;
+}
+
+void compressColor(OStreamer& stream, const Bitmap<unsigned char>& R, const Bitmap<unsigned char>& G, const Bitmap<unsigned char>& B);
+void compressGrayscale(OStreamer& stream, const Bitmap<unsigned char>& map);
+
+void compress(const char * infile, const char * outfile) {
+    ImagePPM imIn;
+    if (!imIn.load(infile)) {
+        std::cerr << "erreur : Impossible de lire l'image" << std::endl;
+        exit(0);
+    }
+
+    std::ofstream file(outfile, std::ios::binary);
+    if (!file.is_open()) {
+        std::cerr << "erreur : Impossible d'écrire sur l'image compresse" << std::endl;
+        exit(0);
+    }
+    OStreamer stream(file);
+
+    stream << imIn.width() << imIn.height();
+    if (imIn.colored()) {
+        stream << (char)1;
+        compressColor(stream, imIn.getRed(), imIn.getGreen(), imIn.getBlue());
+    }
+    else {
+        stream << (char)0;
+        compressGrayscale(stream, imIn.getGrayscale());
+    }
+
+    file.close();
+}
+
+void compressColor(OStreamer& stream, const Bitmap<unsigned char>& R, const Bitmap<unsigned char>& G, const Bitmap<unsigned char>& B) {
+    Bitmap<float> Y, YMean, YDiff, Cr, Cr2, Cb, Cb2;
+    Process::toYCrCb(R, G, B, Y, Cr, Cb);
+    Process::filterMean(Y, YMean);
+    Process::filterSub(Y, YDiff);
+    Bitmap<unsigned char> YMeanQ, YDiffQ, YDiffQ2;
+    Process::Quantify(YMean, YMeanQ, 7);
+    Process::LogQuantify(YDiff, YDiffQ2, 6);
+    Process::ReduceQuantify(YDiffQ2, YDiffQ, 2);
+    YMean = YMeanQ;
+    YDiff = YDiffQ;
+    Y.fill(YMean);
+    Y.fill(YDiff, YDiff.width());
+    Process::Reduce2(Cr, Cr2);
+    Process::Reduce2(Cb, Cb2);
+    Cr2.resize(Cr.width(), Cr.height());
+    Cb2.resize(Cb.width(), Cb.height());
+    Bitmap<unsigned char> R2, G2, B2;
+    R2 = Y;
+    Process::Quantify(Cr2, G2, 7);
+    Process::Quantify(Cb2, B2, 7);
+    for (unsigned int i = 0, height = Y.height(); i < height; i++) {
+        for (unsigned int j = 0, width = Y.width(); j < width; j++) {
+            stream << R2[i][j];
+            stream << G2[i][j];
+            stream << B2[i][j];
+        }
+    }
+}
+
+void compressGrayscale(OStreamer& stream, const Bitmap<unsigned char>& map) {
+
+}
+
+void decompressColor(IStreamer& stream, unsigned int width, unsigned int height, Bitmap<unsigned char>& R, Bitmap<unsigned char>& G, Bitmap<unsigned char>& B);
+void decompressGrayscale(IStreamer& stream, unsigned int width, unsigned int height, Bitmap<unsigned char>& map);
+
+void decompress(const char * infile, const char * outfile) {
+    std::ifstream file(infile, std::ios::binary);
+    if (!file.is_open()) {
+        std::cerr << "erreur : Impossible de lire l'image compresse" << std::endl;
+        exit(0);
+    }
+    IStreamer stream(file);
+
+    ImagePPM imOut;
+    unsigned int width, height;
+    stream >> width;
+    stream >> height;
+    char color;
+    stream >> color;
+    if (color == 1) {
+        Bitmap<unsigned char> R, G, B;
+        decompressColor(stream, width, height, R, G, B);
+        imOut.setRed(R);
+        imOut.setGreen(G);
+        imOut.setBlue(B);
+    }
+    else {
+        Bitmap<unsigned char> map;
+        decompressGrayscale(stream, width, height, map);
+        imOut = map;
+    }
+    file.close();
+
+    if (!imOut.save(outfile)) {
+        std::cerr << "erreur : Impossible d'ecrire l'image' decompresse" << std::endl;
+        exit(0);
+    }
+}
+
+void decompressColor(IStreamer& stream, unsigned int width, unsigned int height, Bitmap<unsigned char>& R, Bitmap<unsigned char>& G, Bitmap<unsigned char>& B) {
+    Bitmap<float> Y, YMean, YDiff, Cr, Cr2, Cb, Cb2;
+    Bitmap<unsigned char> Y2, Cr3, Cb3;
+    Y2.resize(width, height);
+    Cr3.resize(width, height);
+    Cb3.resize(width, height);
+    for (unsigned int i = 0; i < height; i++) {
+        for (unsigned int j = 0; j < width; j++) {
+            stream >> Y2[i][j];
+            stream >> Cr3[i][j];
+            stream >> Cb3[i][j];
+        }
+    }
+    Y = Y2;
+    Y.copy(YMean, Y.width() / 2, Y.height());
+    Y.copy(YDiff, Y.width() / 2, Y.height(), Y.width() / 2);
+    Bitmap<unsigned char> YMeanQ, YDiffQ, YDiffQ2;
+    YMeanQ = YMean;
+    YDiffQ = YDiff;
+    Process::Unquantify(YMeanQ, YMean, 7);
+    Process::EnlargeQuantify(YDiffQ, YDiffQ2, 2);
+    Process::LogUnquantify(YDiffQ2, YDiff, 6);
+    Process::invertFilter(YMean, YDiff, Y);
+    Process::Unquantify(Cr3, Cr2, 7);
+    Process::Unquantify(Cb3, Cb2, 7);
+    Cr2.resize(Y.width() / 2, Y.height() / 2);
+    Cb2.resize(Y.width() / 2, Y.height() / 2);
+    Process::Enlarge2(Cr2, Cr);
+    Process::Enlarge2(Cb2, Cb);
+    Process::toRGB(Y, Cr, Cb, R, G, B);
+}
+
+void decompressGrayscale(IStreamer& stream, unsigned int width, unsigned int height, Bitmap<unsigned char>& map) {
+
 }
