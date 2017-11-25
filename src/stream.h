@@ -132,6 +132,9 @@ namespace LiteScript {
 
         ////// NON STATIC METHOD //////
 
+        // Indicate if end of file
+        bool eof() { return stream.eof(); }
+
         // Right shift operator overloading
         template <typename T>
         IStreamer& operator>>(T& v) {

@@ -73,6 +73,8 @@ void compress(const char * infile, const char * outfile) {
     file.close();
 }
 
+void saveBitvector(OStreamer& stream, std::vector<bool>& bitvector);
+
 void compressColor(OStreamer& stream, const Bitmap<unsigned char>& R, const Bitmap<unsigned char>& G, const Bitmap<unsigned char>& B) {
     Bitmap<float> Y, YMean, YDiff, Cr, Cr2, Cb, Cb2;
     Process::toYCrCb(R, G, B, Y, Cr, Cb);
@@ -94,13 +96,11 @@ void compressColor(OStreamer& stream, const Bitmap<unsigned char>& R, const Bitm
     R2 = Y;
     Process::Quantify(Cr2, G2, 7);
     Process::Quantify(Cb2, B2, 7);
-    for (unsigned int i = 0, height = Y.height(); i < height; i++) {
-        for (unsigned int j = 0, width = Y.width(); j < width; j++) {
-            stream << R2[i][j];
-            stream << G2[i][j];
-            stream << B2[i][j];
-        }
-    }
+    std::vector<bool> bitvector;
+    Process::huffman(R2, bitvector);
+    Process::huffman(G2, bitvector);
+    Process::huffman(B2, bitvector);
+    saveBitvector(stream, bitvector);
 }
 
 void compressGrayscale(OStreamer& stream, const Bitmap<unsigned char>& map) {
@@ -144,19 +144,16 @@ void decompress(const char * infile, const char * outfile) {
     }
 }
 
+void loadBitvector(IStreamer& stream, std::vector<bool>& bitvector);
+
 void decompressColor(IStreamer& stream, unsigned int width, unsigned int height, Bitmap<unsigned char>& R, Bitmap<unsigned char>& G, Bitmap<unsigned char>& B) {
     Bitmap<float> Y, YMean, YDiff, Cr, Cr2, Cb, Cb2;
     Bitmap<unsigned char> Y2, Cr3, Cb3;
-    Y2.resize(width, height);
-    Cr3.resize(width, height);
-    Cb3.resize(width, height);
-    for (unsigned int i = 0; i < height; i++) {
-        for (unsigned int j = 0; j < width; j++) {
-            stream >> Y2[i][j];
-            stream >> Cr3[i][j];
-            stream >> Cb3[i][j];
-        }
-    }
+    std::vector<bool> bitvector;
+    loadBitvector(stream, bitvector);
+    bitvector.erase(bitvector.begin(), bitvector.begin() + Process::invertHuffman(bitvector, Y2, width, height));
+    bitvector.erase(bitvector.begin(), bitvector.begin() + Process::invertHuffman(bitvector, Cr3, width, height));
+    bitvector.erase(bitvector.begin(), bitvector.begin() + Process::invertHuffman(bitvector, Cb3, width, height));
     Y = Y2;
     Y.copy(YMean, Y.width() / 2, Y.height());
     Y.copy(YDiff, Y.width() / 2, Y.height(), Y.width() / 2);
@@ -178,4 +175,26 @@ void decompressColor(IStreamer& stream, unsigned int width, unsigned int height,
 
 void decompressGrayscale(IStreamer& stream, unsigned int width, unsigned int height, Bitmap<unsigned char>& map) {
 
+}
+
+void saveBitvector(OStreamer& stream, std::vector<bool>& bitvector) {
+    unsigned char c = 0;
+    for (unsigned long i = 0, size = bitvector.size(); i < size; i++) {
+        c |= bitvector[i] << (i % 8);
+        if ((i + 1) % 8 == 0) {
+            stream << c;
+            c = 0;
+        }
+    }
+    if (bitvector.size() % 8 != 0)
+        stream << c;
+}
+
+void loadBitvector(IStreamer& stream, std::vector<bool>& bitvector) {
+    unsigned char c;
+    for (unsigned long i = 0; !stream.eof(); i++) {
+        if (i % 8 == 0)
+            stream >> c;
+        bitvector.push_back((c >> (i % 8)) & 0x1);
+    }
 }
