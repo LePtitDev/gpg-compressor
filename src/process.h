@@ -61,9 +61,9 @@ namespace Process {
 
     void setBinary(const Bitmap<unsigned char>& in, Bitmap<unsigned char>& out, unsigned int N = 0);
 
-    unsigned int arithmeticEncoding(const Bitmap<unsigned char>& in, std::vector<bool>& out, unsigned int N = 8, unsigned int NMAX = 2);
+    unsigned int arithmeticEncoding(const Bitmap<unsigned char>& in, std::vector<bool>& out, unsigned int N = 8, unsigned int NMAX = 2, unsigned int PSIZE = 8);
 
-    unsigned int invertArithmeticEncoding(const std::vector<bool>& in, Bitmap<unsigned char>& out, unsigned int width, unsigned int height, unsigned int N = 8, unsigned int NMAX = 2);
+    unsigned int invertArithmeticEncoding(const std::vector<bool>& in, Bitmap<unsigned char>& out, unsigned int width, unsigned int height, unsigned int N = 8, unsigned int NMAX = 2, unsigned int PSIZE = 8);
 
 }
 

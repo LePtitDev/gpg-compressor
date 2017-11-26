@@ -484,19 +484,19 @@ void Process::setBinary(const Bitmap<unsigned char>& in, Bitmap<unsigned char>& 
     }
 }
 
-#include "format/image-ppm.h"
-unsigned int Process::arithmeticEncoding(const Bitmap<unsigned char>& in, std::vector<bool>& out, unsigned int N, unsigned int NMAX) {
+unsigned int Process::arithmeticEncoding(const Bitmap<unsigned char>& in, std::vector<bool>& out, unsigned int N, unsigned int NMAX, unsigned int PSIZE) {
+    unsigned int KMAX = (unsigned int)std::ceil(std::log2(PSIZE + 1));
     unsigned int count = out.size();
     Bitmap<unsigned char> map;
     for (unsigned int b = NMAX; b < N; b++) {
         getBinary(in, map, b);
-        for (unsigned int i = 0, h = in.height() / 8; i < h; i++) {
-            for (unsigned int j = 0, w = in.width() / 8; j < w; j++) {
+        for (unsigned int i = 0, h = in.height() / PSIZE; i < h; i++) {
+            for (unsigned int j = 0, w = in.width() / PSIZE; j < w; j++) {
                 unsigned int size = 0, maxsize = 0;
-                unsigned char c = map[i * 8][j * 8];
-                for (unsigned int _i = 0; _i < 8; _i++) {
-                    for (unsigned int _j = 0; _j < 8; _j++) {
-                        if (c != map[i * 8 + _i][j * 8 + _j]) {
+                unsigned char c = map[i * PSIZE][j * PSIZE];
+                for (unsigned int _i = 0; _i < PSIZE; _i++) {
+                    for (unsigned int _j = 0; _j < PSIZE; _j++) {
+                        if (c != map[i * PSIZE + _i][j * PSIZE + _j]) {
                             size = 0;
                             c = c ? 0 : 1;
                         }
@@ -506,14 +506,14 @@ unsigned int Process::arithmeticEncoding(const Bitmap<unsigned char>& in, std::v
                     }
                 }
                 maxsize = (unsigned int)std::ceil(std::log2(maxsize + 1));
-                for (unsigned int k = 0; k < 7; k++)
+                for (unsigned int k = 0; k < KMAX; k++)
                     out.push_back((maxsize >> k) & 0x1);
-                c = map[i * 8][j * 8];
+                c = map[i * PSIZE][j * PSIZE];
                 out.push_back(c);
                 size = 0;
-                for (unsigned int _i = 0; _i < 8; _i++) {
-                    for (unsigned int _j = 0; _j < 8; _j++) {
-                        if (c != map[i * 8 + _i][j * 8 + _j]) {
+                for (unsigned int _i = 0; _i < PSIZE; _i++) {
+                    for (unsigned int _j = 0; _j < PSIZE; _j++) {
+                        if (c != map[i * PSIZE + _i][j * PSIZE + _j]) {
                             for (unsigned int k = 0; k < maxsize; k++)
                                 out.push_back((size >> k) & 0x1);
                             size = 0;
@@ -530,29 +530,30 @@ unsigned int Process::arithmeticEncoding(const Bitmap<unsigned char>& in, std::v
     return out.size() - count;
 }
 
-unsigned int Process::invertArithmeticEncoding(const std::vector<bool>& in, Bitmap<unsigned char>& out, unsigned int width, unsigned int height, unsigned int N, unsigned int NMAX) {
+unsigned int Process::invertArithmeticEncoding(const std::vector<bool>& in, Bitmap<unsigned char>& out, unsigned int width, unsigned int height, unsigned int N, unsigned int NMAX, unsigned int PSIZE) {
+    unsigned int KMAX = (unsigned int)std::ceil(std::log2(PSIZE + 1));
     unsigned int count = 0;
     if (out.width() != width || out.height() != height)
         out.resize(width, height);
     Bitmap<unsigned char> map;
     map.resize(width, height);
     for (unsigned int b = NMAX; b < N; b++) {
-        for (unsigned int i = 0, h = height / 8; i < h; i++) {
-            for (unsigned int j = 0, w = width / 8; j < w; j++) {
+        for (unsigned int i = 0, h = height / PSIZE; i < h; i++) {
+            for (unsigned int j = 0, w = width / PSIZE; j < w; j++) {
                 unsigned int size = 0, maxsize = 0;
-                for (unsigned int k = 0; k < 7; k++, count++)
+                for (unsigned int k = 0; k < KMAX; k++, count++)
                     maxsize |= ((unsigned char)in[count] << k);
                 unsigned char c;
                 c = in[count++] ? 0 : 1;
-                for (unsigned int _i = 0; _i < 8; _i++) {
-                    for (unsigned int _j = 0; _j < 8; _j++) {
+                for (unsigned int _i = 0; _i < PSIZE; _i++) {
+                    for (unsigned int _j = 0; _j < PSIZE; _j++) {
                         if (size == 0) {
                             for (unsigned int k = 0; k < maxsize; k++, count++)
                                 size |= ((unsigned char)in[count] << k);
                             c = c ? 0 : 1;
                         }
                         size--;
-                        map[i * 8 + _i][j * 8 + _j] = c;
+                        map[i * PSIZE + _i][j * PSIZE + _j] = c;
                     }
                 }
             }
