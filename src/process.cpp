@@ -263,7 +263,7 @@ unsigned int Process::huffman(const Bitmap<unsigned char>& in, std::vector<bool>
     Huffman<8> huff;
     huff.create(in.data(), in.width() * in.height(), N);
     unsigned int it = huff.write(out, N);
-    return it + huff.write(out, in.data(), in.width() * in.height());
+    return it + huff.write(out, in.data(), in.width() * in.height(), N);
 }
 
 unsigned int Process::invertHuffman(const std::vector<bool>& in, Bitmap<unsigned char>& out, unsigned int width, unsigned int height, unsigned int N) {
@@ -479,15 +479,85 @@ void Process::setBinary(const Bitmap<unsigned char>& in, Bitmap<unsigned char>& 
     for (unsigned int i = 0, h = in.height(); i < h; i++) {
         for (unsigned int j = 0, w = in.width(); j < w; j++) {
             out[i][j] &= ~(0x1 << N);
-            out[i][j] |= ~(0x1 << N) & (in[i][j] << N);
+            out[i][j] |= (0x1 << N) & (in[i][j] << N);
         }
     }
 }
 
-void Process::arithmeticEncoding(const Bitmap<unsigned char>& in, std::vector<bool>& out, unsigned int N = 8, unsigned int NMAX = 2) {
-
+#include "format/image-ppm.h"
+unsigned int Process::arithmeticEncoding(const Bitmap<unsigned char>& in, std::vector<bool>& out, unsigned int N, unsigned int NMAX) {
+    unsigned int count = out.size();
+    Bitmap<unsigned char> map;
+    for (unsigned int b = NMAX; b < N; b++) {
+        getBinary(in, map, b);
+        for (unsigned int i = 0, h = in.height() / 8; i < h; i++) {
+            for (unsigned int j = 0, w = in.width() / 8; j < w; j++) {
+                unsigned int size = 0, maxsize = 0;
+                unsigned char c = map[i * 8][j * 8];
+                for (unsigned int _i = 0; _i < 8; _i++) {
+                    for (unsigned int _j = 0; _j < 8; _j++) {
+                        if (c != map[i * 8 + _i][j * 8 + _j]) {
+                            size = 0;
+                            c = c ? 0 : 1;
+                        }
+                        size++;
+                        if (size > maxsize)
+                            maxsize = size;
+                    }
+                }
+                maxsize = (unsigned int)std::ceil(std::log2(maxsize + 1));
+                for (unsigned int k = 0; k < 7; k++)
+                    out.push_back((maxsize >> k) & 0x1);
+                c = map[i * 8][j * 8];
+                out.push_back(c);
+                size = 0;
+                for (unsigned int _i = 0; _i < 8; _i++) {
+                    for (unsigned int _j = 0; _j < 8; _j++) {
+                        if (c != map[i * 8 + _i][j * 8 + _j]) {
+                            for (unsigned int k = 0; k < maxsize; k++)
+                                out.push_back((size >> k) & 0x1);
+                            size = 0;
+                            c = c ? 0 : 1;
+                        }
+                        size++;
+                    }
+                }
+                for (unsigned int k = 0; k < maxsize; k++)
+                    out.push_back((size >> k) & 0x1);
+            }
+        }
+    }
+    return out.size() - count;
 }
 
-void Process::invertArithmeticEncoding(const std::vector<bool>& in, Bitmap<unsigned char>& out, unsigned int width, unsigned int height, unsigned int N = 8, unsigned int NMAX = 2) {
-
+unsigned int Process::invertArithmeticEncoding(const std::vector<bool>& in, Bitmap<unsigned char>& out, unsigned int width, unsigned int height, unsigned int N, unsigned int NMAX) {
+    unsigned int count = 0;
+    if (out.width() != width || out.height() != height)
+        out.resize(width, height);
+    Bitmap<unsigned char> map;
+    map.resize(width, height);
+    for (unsigned int b = NMAX; b < N; b++) {
+        for (unsigned int i = 0, h = height / 8; i < h; i++) {
+            for (unsigned int j = 0, w = width / 8; j < w; j++) {
+                unsigned int size = 0, maxsize = 0;
+                for (unsigned int k = 0; k < 7; k++, count++)
+                    maxsize |= ((unsigned char)in[count] << k);
+                unsigned char c;
+                c = in[count++] ? 0 : 1;
+                for (unsigned int _i = 0; _i < 8; _i++) {
+                    for (unsigned int _j = 0; _j < 8; _j++) {
+                        if (size == 0) {
+                            for (unsigned int k = 0; k < maxsize; k++, count++)
+                                size |= ((unsigned char)in[count] << k);
+                            c = c ? 0 : 1;
+                        }
+                        size--;
+                        map[i * 8 + _i][j * 8 + _j] = c;
+                    }
+                }
+            }
+        }
+        setBinary(map, out, b);
+    }
+    return count;
 }

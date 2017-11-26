@@ -174,11 +174,11 @@ public:
     }
 
     // Write data content with frequency tree
-    unsigned int write(std::vector<bool>& stream, const void * data, std::size_t count) {
+    unsigned int write(std::vector<bool>& stream, const void * data, std::size_t count, unsigned int elem_size = N) {
         unsigned int sz = stream.size();
         for (unsigned int i = 0; i < count; i++) {
             std::bitset<N> elem;
-            for (unsigned int j = 0; j < N; j++) {
+            for (unsigned int j = 0; j < elem_size; j++) {
                 unsigned long nbB = (unsigned long)i * (unsigned long)N + (unsigned long)j;
                 elem[j] = (((unsigned char *)data)[(unsigned int)(nbB / (unsigned long)8)] >> (nbB % 8)) & 0x1;
             }
