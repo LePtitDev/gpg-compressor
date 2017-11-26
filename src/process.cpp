@@ -104,7 +104,7 @@ void Process::ReduceQuantify(const Bitmap<unsigned char>& in, Bitmap<unsigned ch
         out.resize(in.width(), in.height());
     for (unsigned int i = 0, h = in.height(); i < h; i++) {
         for (unsigned int j = 0, w = in.width(); j < w; j++) {
-            out[i][j] = in[i][j] >> N;
+            out[i][j] = (in[i][j] >> N);
         }
     }
 }
@@ -482,4 +482,12 @@ void Process::setBinary(const Bitmap<unsigned char>& in, Bitmap<unsigned char>& 
             out[i][j] |= ~(0x1 << N) & (in[i][j] << N);
         }
     }
+}
+
+void Process::arithmeticEncoding(const Bitmap<unsigned char>& in, std::vector<bool>& out, unsigned int N = 8, unsigned int NMAX = 2) {
+
+}
+
+void Process::invertArithmeticEncoding(const std::vector<bool>& in, Bitmap<unsigned char>& out, unsigned int width, unsigned int height, unsigned int N = 8, unsigned int NMAX = 2) {
+
 }
