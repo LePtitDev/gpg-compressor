@@ -140,18 +140,38 @@ void compressGrayscale(OStreamer& stream, const Bitmap<unsigned char>& map) {
     Process::mergeGrayscale(map, YQ, 64);
     Y = YQ;
     Process::Quantify(Y, YQ, 6);
-    std::vector<bool> bitvector1, bitvector2;
-    unsigned int C1, C2;
-    C1 = Process::huffman(YQ, bitvector1, 3);
-    C1 += Process::arithmeticEncoding(YQ, bitvector1, 6, 3, 16);
-    C2 = Process::huffman(YQ, bitvector2, 6);
-    if (C1 < C2) {
+    if (Process::calculatePSNR(map, YQ) > 20.0f) {
         stream << (unsigned char)1;
-        saveBitvector(stream, bitvector1);
+        std::vector<bool> bitvector1, bitvector2;
+        unsigned int C1, C2;
+        C1 = Process::huffman(YQ, bitvector1, 3);
+        C1 += Process::arithmeticEncoding(YQ, bitvector1, 6, 3, 16);
+        C2 = Process::huffman(YQ, bitvector2, 6);
+        if (C1 < C2) {
+            stream << (unsigned char)1;
+            saveBitvector(stream, bitvector1);
+        }
+        else {
+            stream << (unsigned char)2;
+            saveBitvector(stream, bitvector2);
+        }
     }
     else {
+        Process::Quantify(Y, YQ, 7);
         stream << (unsigned char)2;
-        saveBitvector(stream, bitvector2);
+        std::vector<bool> bitvector1, bitvector2;
+        unsigned int C1, C2;
+        C1 = Process::huffman(YQ, bitvector1, 4);
+        C1 += Process::arithmeticEncoding(YQ, bitvector1, 7, 4, 16);
+        C2 = Process::huffman(YQ, bitvector2, 7);
+        if (C1 < C2) {
+            stream << (unsigned char)1;
+            saveBitvector(stream, bitvector1);
+        }
+        else {
+            stream << (unsigned char)2;
+            saveBitvector(stream, bitvector2);
+        }
     }
 }
 
@@ -235,17 +255,30 @@ void decompressGrayscale(IStreamer& stream, unsigned int width, unsigned int hei
     Bitmap<float> Y;
     Bitmap<unsigned char> YQ;
     std::vector<bool> bitvector;
-    unsigned char c;
-    stream >> c;
+    unsigned char c1, c2;
+    stream >> c1;
+    stream >> c2;
     loadBitvector(stream, bitvector);
-    if (c == 1) {
-        bitvector.erase(bitvector.begin(), bitvector.begin() + Process::invertHuffman(bitvector, YQ, width, height, 3));
-        bitvector.erase(bitvector.begin(), bitvector.begin() + Process::invertArithmeticEncoding(bitvector, YQ, width, height, 6, 3, 16));
+    if (c1 == 1) {
+        if (c2 == 1) {
+            bitvector.erase(bitvector.begin(), bitvector.begin() + Process::invertHuffman(bitvector, YQ, width, height, 3));
+            bitvector.erase(bitvector.begin(), bitvector.begin() + Process::invertArithmeticEncoding(bitvector, YQ, width, height, 6, 3, 16));
+        }
+        else {
+            bitvector.erase(bitvector.begin(), bitvector.begin() + Process::invertHuffman(bitvector, YQ, width, height, 6));
+        }
+        Process::Unquantify(YQ, Y, 6);
     }
     else {
-        bitvector.erase(bitvector.begin(), bitvector.begin() + Process::invertHuffman(bitvector, YQ, width, height, 6));
+        if (c2 == 1) {
+            bitvector.erase(bitvector.begin(), bitvector.begin() + Process::invertHuffman(bitvector, YQ, width, height, 4));
+            bitvector.erase(bitvector.begin(), bitvector.begin() + Process::invertArithmeticEncoding(bitvector, YQ, width, height, 7, 4, 16));
+        }
+        else {
+            bitvector.erase(bitvector.begin(), bitvector.begin() + Process::invertHuffman(bitvector, YQ, width, height, 7));
+        }
+        Process::Unquantify(YQ, Y, 7);
     }
-    Process::Unquantify(YQ, Y, 6);
     map = Y;
 }
 
