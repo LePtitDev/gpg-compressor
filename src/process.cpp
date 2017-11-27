@@ -606,3 +606,36 @@ void Process::invertWaveletTransform(const Bitmap<float>& in, Bitmap<float>& out
     invertFilterUp(RU, RD, R);
     invertFilter(L, R, out);
 }
+
+void Process::mergeGrayscale(const Bitmap<unsigned char>& in, Bitmap<unsigned char>& out, unsigned int count) {
+    if (in.width() != out.width() || in.height() != out.height())
+        out.resize(in.width(), in.height());
+    std::array<unsigned int, 256> histo;
+    for (unsigned int i = 0; i < 256; i++)
+        histo[i] = 0;
+    for (unsigned int i = 0, h = in.height(); i < h; i++) {
+        for (unsigned int j = 0, w = in.width(); j < w; j++) {
+            histo[in[i][j]]++;
+        }
+    }
+    unsigned char * colors = new unsigned char[count];
+    for (unsigned int i = 0, k = 0, cpt = 0, size = in.width() * in.height(); i < 256; i++) {
+        cpt += histo[i];
+        if (cpt >= k * size / count)
+            colors[k++] = i;
+    }
+    for (unsigned int i = 0, h = in.height(); i < h; i++) {
+        for (unsigned int j = 0, w = in.width(); j < w; j++) {
+            unsigned int pos = 0, color = in[i][j];
+            int dist =  ((int)color - (int)colors[0]) * ((int)color - (int)colors[0]),
+                tmp_dist;
+            for (unsigned int k = 1; k < count; k++) {
+                if ((tmp_dist = ((int)color - (int)colors[k]) * ((int)color - (int)colors[k])) < dist) {
+                    dist = tmp_dist;
+                    pos = k;
+                }
+            }
+            out[i][j] = colors[pos];
+        }
+    }
+}

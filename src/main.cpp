@@ -112,17 +112,22 @@ void compressColor(OStreamer& stream, const Bitmap<unsigned char>& R, const Bitm
 void compressGrayscale(OStreamer& stream, const Bitmap<unsigned char>& map) {
     Bitmap<float> Y;
     Bitmap<unsigned char> YQ;
-    Y = map;
-    Process::waveletTransform(Y, Y, 1);
-    Process::Quantify(Y, YQ, 8);
-    //ImagePPM img;
-    //img = YQ;
-    //img.save("test.pgm");
-    Process::grayCoding(YQ, YQ);
-    std::vector<bool> bitvector;
-    std::cout << Process::huffman(YQ, bitvector, 8) << std::endl;
-    //std::cout << Process::arithmeticEncoding(YQ, bitvector, 8, 4, 16) << std::endl;
-    saveBitvector(stream, bitvector);
+    Process::mergeGrayscale(map, YQ, 64);
+    Y = YQ;
+    Process::Quantify(Y, YQ, 6);
+    std::vector<bool> bitvector1, bitvector2;
+    unsigned int C1, C2;
+    C1 = Process::huffman(YQ, bitvector1, 3);
+    C1 += Process::arithmeticEncoding(YQ, bitvector1, 6, 3, 16);
+    C2 = Process::huffman(YQ, bitvector2, 6);
+    if (C1 < C2) {
+        stream << (unsigned char)1;
+        saveBitvector(stream, bitvector1);
+    }
+    else {
+        stream << (unsigned char)2;
+        saveBitvector(stream, bitvector2);
+    }
 }
 
 void decompressColor(IStreamer& stream, unsigned int width, unsigned int height, Bitmap<unsigned char>& R, Bitmap<unsigned char>& G, Bitmap<unsigned char>& B);
@@ -157,7 +162,7 @@ void decompress(const char * infile, const char * outfile) {
     file.close();
 
     if (!imOut.save(outfile)) {
-        std::cerr << "erreur : Impossible d'ecrire l'image' decompresse" << std::endl;
+        std::cerr << "erreur : Impossible d'ecrire l'image decompresse" << std::endl;
         exit(0);
     }
 }
@@ -193,15 +198,20 @@ void decompressColor(IStreamer& stream, unsigned int width, unsigned int height,
 }
 
 void decompressGrayscale(IStreamer& stream, unsigned int width, unsigned int height, Bitmap<unsigned char>& map) {
-    Bitmap<float> Y, Y2;
+    Bitmap<float> Y;
     Bitmap<unsigned char> YQ;
     std::vector<bool> bitvector;
+    unsigned char c;
+    stream >> c;
     loadBitvector(stream, bitvector);
-    bitvector.erase(bitvector.begin(), bitvector.begin() + Process::invertHuffman(bitvector, YQ, width, height, 8));
-    //bitvector.erase(bitvector.begin(), bitvector.begin() + Process::invertArithmeticEncoding(bitvector, YQ, width / 2, height / 2, 8, 3, 16));
-    Process::invertGrayCoding(YQ, YQ);
-    Process::Unquantify(YQ, Y, 8);
-    Process::invertWaveletTransform(Y, Y, 1);
+    if (c == 1) {
+        bitvector.erase(bitvector.begin(), bitvector.begin() + Process::invertHuffman(bitvector, YQ, width, height, 3));
+        bitvector.erase(bitvector.begin(), bitvector.begin() + Process::invertArithmeticEncoding(bitvector, YQ, width, height, 6, 3, 16));
+    }
+    else {
+        bitvector.erase(bitvector.begin(), bitvector.begin() + Process::invertHuffman(bitvector, YQ, width, height, 6));
+    }
+    Process::Unquantify(YQ, Y, 6);
     map = Y;
 }
 

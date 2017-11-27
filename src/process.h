@@ -69,6 +69,8 @@ namespace Process {
     
     void invertWaveletTransform(const Bitmap<float>& in, Bitmap<float>& out, unsigned int pass = 1);
 
+    void mergeGrayscale(const Bitmap<unsigned char>& in, Bitmap<unsigned char>& out, unsigned int count = 64);
+
 }
 
 #endif // PROCESS_H
