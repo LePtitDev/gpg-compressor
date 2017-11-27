@@ -82,30 +82,55 @@ void compress(const char * infile, const char * outfile) {
 void saveBitvector(OStreamer& stream, std::vector<bool>& bitvector);
 
 void compressColor(OStreamer& stream, const Bitmap<unsigned char>& R, const Bitmap<unsigned char>& G, const Bitmap<unsigned char>& B) {
-    Bitmap<float> Y, YMean, YDiff, Cr, Cr2, Cb, Cb2;
+    Bitmap<unsigned char> YQ, YMeanQ, YDiffQ, YDiffQ2, CrQ, CbQ, R2, G2, B2;
+    Bitmap<float> Y, Y2, YMean, YDiff, Cr, Cr2, Cb, Cb2;
+    std::vector<bool> bitvector;
+
     Process::toYCrCb(R, G, B, Y, Cr, Cb);
     Process::filterMean(Y, YMean);
     Process::filterSub(Y, YDiff);
-    Bitmap<unsigned char> YMeanQ, YDiffQ, YDiffQ2;
     Process::Quantify(YMean, YMeanQ, 7);
-    Process::LogQuantify(YDiff, YDiffQ2, 6);
-    Process::ReduceQuantify(YDiffQ2, YDiffQ, 2);
+    Process::LogQuantify(YDiff, YDiffQ, 6);
+    Process::ReduceQuantify(YDiffQ, YDiffQ, 2);
     Process::Reduce2(Cr, Cr2);
     Process::Reduce2(Cb, Cb2);
-    Bitmap<unsigned char> G2, B2;
-    Process::Quantify(Cr2, G2, 7);
-    Process::Quantify(Cb2, B2, 7);
-    Process::grayCoding(YMeanQ, YMeanQ);
-    Process::grayCoding(G2, G2);
-    Process::grayCoding(B2, B2);
-    std::vector<bool> bitvector;
-    Process::huffman(YMeanQ, bitvector, 3);
-    Process::arithmeticEncoding(YMeanQ, bitvector, 7, 3, 16);
-    Process::huffman(YDiffQ, bitvector, 4);
-    Process::huffman(G2, bitvector, 2);
-    Process::arithmeticEncoding(G2, bitvector, 7, 2, 16);
-    Process::huffman(B2, bitvector, 2);
-    Process::arithmeticEncoding(B2, bitvector, 7, 2, 16);
+    Process::Quantify(Cr2, CrQ, 7);
+    Process::Quantify(Cb2, CbQ, 7);
+    
+    Process::Unquantify(CrQ, Cr2, 7);
+    Process::Unquantify(CbQ, Cb2, 7);
+    Process::Enlarge2(Cr2, Cr);
+    Process::Enlarge2(Cb2, Cb);
+    Process::EnlargeQuantify(YDiffQ, YDiffQ2, 2);
+    Process::LogUnquantify(YDiffQ2, YDiff, 6);
+    Process::Unquantify(YMeanQ, YMean, 7);
+    Process::invertFilter(YMean, YDiff, Y2);
+    Process::toRGB(Y2, Cr, Cb, R2, G2, B2);
+    Process::toGrayscale(R2, G2, B2, YDiffQ2);
+    YQ = Y;
+
+    Process::grayCoding(CrQ, CrQ);
+    Process::grayCoding(CbQ, CbQ);
+    if (Process::calculatePSNR(YQ, YDiffQ2) >= 35.0f) {
+        stream << (unsigned char)1;
+        Process::grayCoding(YMeanQ, YMeanQ);
+        Process::huffman(YMeanQ, bitvector, 3);
+        Process::arithmeticEncoding(YMeanQ, bitvector, 7, 3, 16);
+        Process::huffman(YDiffQ, bitvector, 4);
+    }
+    else {
+        stream << (unsigned char)2;
+        Process::mergeGrayscale(YQ, YMeanQ, 64);
+        Y = YMeanQ;
+        Process::Quantify(Y, YMeanQ, 6);
+        Process::huffman(YMeanQ, bitvector, 3);
+        Process::arithmeticEncoding(YMeanQ, bitvector, 6, 3, 16);
+    }
+
+    Process::huffman(CrQ, bitvector, 2);
+    Process::arithmeticEncoding(CrQ, bitvector, 7, 2, 16);
+    Process::huffman(CbQ, bitvector, 2);
+    Process::arithmeticEncoding(CbQ, bitvector, 7, 2, 16);
     saveBitvector(stream, bitvector);
 }
 
@@ -170,24 +195,33 @@ void decompress(const char * infile, const char * outfile) {
 void loadBitvector(IStreamer& stream, std::vector<bool>& bitvector);
 
 void decompressColor(IStreamer& stream, unsigned int width, unsigned int height, Bitmap<unsigned char>& R, Bitmap<unsigned char>& G, Bitmap<unsigned char>& B) {
+    Bitmap<unsigned char> YQ, Cr3, Cb3, YMeanQ, YDiffQ, YDiffQ2;
     Bitmap<float> Y, YMean, YDiff, Cr, Cr2, Cb, Cb2;
-    Bitmap<unsigned char> Cr3, Cb3, YMeanQ, YDiffQ, YDiffQ2;
     std::vector<bool> bitvector;
+    unsigned char c;
+    stream >> c;
     loadBitvector(stream, bitvector);
-    bitvector.erase(bitvector.begin(), bitvector.begin() + Process::invertHuffman(bitvector, YMeanQ, width / 2, height, 3));
-    bitvector.erase(bitvector.begin(), bitvector.begin() + Process::invertArithmeticEncoding(bitvector, YMeanQ, width / 2, height, 7, 3, 16));
-    bitvector.erase(bitvector.begin(), bitvector.begin() + Process::invertHuffman(bitvector, YDiffQ, width / 2, height, 4));
+    if (c == 1) {
+        bitvector.erase(bitvector.begin(), bitvector.begin() + Process::invertHuffman(bitvector, YMeanQ, width / 2, height, 3));
+        bitvector.erase(bitvector.begin(), bitvector.begin() + Process::invertArithmeticEncoding(bitvector, YMeanQ, width / 2, height, 7, 3, 16));
+        bitvector.erase(bitvector.begin(), bitvector.begin() + Process::invertHuffman(bitvector, YDiffQ, width / 2, height, 4));
+        Process::invertGrayCoding(YMeanQ, YMeanQ);
+        Process::Unquantify(YMeanQ, YMean, 7);
+        Process::EnlargeQuantify(YDiffQ, YDiffQ2, 2);
+        Process::LogUnquantify(YDiffQ2, YDiff, 6);
+        Process::invertFilter(YMean, YDiff, Y);
+    }
+    else {
+        bitvector.erase(bitvector.begin(), bitvector.begin() + Process::invertHuffman(bitvector, YQ, width, height, 3));
+        bitvector.erase(bitvector.begin(), bitvector.begin() + Process::invertArithmeticEncoding(bitvector, YQ, width, height, 6, 3, 16));
+        Process::Unquantify(YQ, Y, 6);
+    }
     bitvector.erase(bitvector.begin(), bitvector.begin() + Process::invertHuffman(bitvector, Cr3, width / 2, height / 2, 2));
     bitvector.erase(bitvector.begin(), bitvector.begin() + Process::invertArithmeticEncoding(bitvector, Cr3, width / 2, height / 2, 7, 2, 16));
     bitvector.erase(bitvector.begin(), bitvector.begin() + Process::invertHuffman(bitvector, Cb3, width / 2, height / 2, 2));
     bitvector.erase(bitvector.begin(), bitvector.begin() + Process::invertArithmeticEncoding(bitvector, Cb3, width / 2, height / 2, 7, 2, 16));
-    Process::invertGrayCoding(YMeanQ, YMeanQ);
     Process::invertGrayCoding(Cr3, Cr3);
     Process::invertGrayCoding(Cb3, Cb3);
-    Process::Unquantify(YMeanQ, YMean, 7);
-    Process::EnlargeQuantify(YDiffQ, YDiffQ2, 2);
-    Process::LogUnquantify(YDiffQ2, YDiff, 6);
-    Process::invertFilter(YMean, YDiff, Y);
     Process::Unquantify(Cr3, Cr2, 7);
     Process::Unquantify(Cb3, Cb2, 7);
     Cr2.resize(Y.width() / 2, Y.height() / 2);

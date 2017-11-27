@@ -618,7 +618,7 @@ void Process::mergeGrayscale(const Bitmap<unsigned char>& in, Bitmap<unsigned ch
             histo[in[i][j]]++;
         }
     }
-    unsigned char * colors = new unsigned char[count];
+    unsigned char colors[count];
     for (unsigned int i = 0, k = 0, cpt = 0, size = in.width() * in.height(); i < 256; i++) {
         cpt += histo[i];
         if (cpt >= k * size / count)
