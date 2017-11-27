@@ -99,30 +99,29 @@ void compressColor(OStreamer& stream, const Bitmap<unsigned char>& R, const Bitm
     Process::grayCoding(G2, G2);
     Process::grayCoding(B2, B2);
     std::vector<bool> bitvector;
-    std::cout << Process::huffman(YMeanQ, bitvector, 3) << std::endl;
-    std::cout << Process::arithmeticEncoding(YMeanQ, bitvector, 7, 3, 16) << std::endl;
-    std::cout << Process::huffman(YDiffQ, bitvector, 4) << std::endl;
-    std::cout << Process::huffman(G2, bitvector, 2) << std::endl;
-    std::cout << Process::arithmeticEncoding(G2, bitvector, 7, 2, 16) << std::endl;
-    std::cout << Process::huffman(B2, bitvector, 2) << std::endl;
-    std::cout << Process::arithmeticEncoding(B2, bitvector, 7, 2, 16) << std::endl;
+    Process::huffman(YMeanQ, bitvector, 3);
+    Process::arithmeticEncoding(YMeanQ, bitvector, 7, 3, 16);
+    Process::huffman(YDiffQ, bitvector, 4);
+    Process::huffman(G2, bitvector, 2);
+    Process::arithmeticEncoding(G2, bitvector, 7, 2, 16);
+    Process::huffman(B2, bitvector, 2);
+    Process::arithmeticEncoding(B2, bitvector, 7, 2, 16);
     saveBitvector(stream, bitvector);
 }
 
 void compressGrayscale(OStreamer& stream, const Bitmap<unsigned char>& map) {
-    Bitmap<float> Y, YMean, YDiff;
+    Bitmap<float> Y;
+    Bitmap<unsigned char> YQ;
     Y = map;
-    Process::filterMean(Y, YMean);
-    Process::filterSub(Y, YDiff);
-    Bitmap<unsigned char> YMeanQ, YDiffQ, YDiffQ2;
-    Process::Quantify(YMean, YMeanQ, 7);
-    Process::LogQuantify(YDiff, YDiffQ2, 6);
-    Process::ReduceQuantify(YDiffQ2, YDiffQ, 2);
-    Process::grayCoding(YMeanQ, YMeanQ);
+    Process::waveletTransform(Y, Y, 1);
+    Process::Quantify(Y, YQ, 8);
+    //ImagePPM img;
+    //img = YQ;
+    //img.save("test.pgm");
+    Process::grayCoding(YQ, YQ);
     std::vector<bool> bitvector;
-    Process::huffman(YMeanQ, bitvector, 3);
-    Process::arithmeticEncoding(YMeanQ, bitvector, 7, 3, 16);
-    Process::huffman(YDiffQ, bitvector);
+    std::cout << Process::huffman(YQ, bitvector, 8) << std::endl;
+    //std::cout << Process::arithmeticEncoding(YQ, bitvector, 8, 4, 16) << std::endl;
     saveBitvector(stream, bitvector);
 }
 
@@ -194,18 +193,15 @@ void decompressColor(IStreamer& stream, unsigned int width, unsigned int height,
 }
 
 void decompressGrayscale(IStreamer& stream, unsigned int width, unsigned int height, Bitmap<unsigned char>& map) {
-    Bitmap<float> Y, YMean, YDiff;
-    Bitmap<unsigned char> YMeanQ, YDiffQ, YDiffQ2;
+    Bitmap<float> Y, Y2;
+    Bitmap<unsigned char> YQ;
     std::vector<bool> bitvector;
     loadBitvector(stream, bitvector);
-    bitvector.erase(bitvector.begin(), bitvector.begin() + Process::invertHuffman(bitvector, YMeanQ, width / 2, height, 3));
-    bitvector.erase(bitvector.begin(), bitvector.begin() + Process::invertArithmeticEncoding(bitvector, YMeanQ, width / 2, height, 7, 3, 16));
-    bitvector.erase(bitvector.begin(), bitvector.begin() + Process::invertHuffman(bitvector, YDiffQ, width / 2, height));
-    Process::invertGrayCoding(YMeanQ, YMeanQ);
-    Process::Unquantify(YMeanQ, YMean, 7);
-    Process::EnlargeQuantify(YDiffQ, YDiffQ2, 2);
-    Process::LogUnquantify(YDiffQ2, YDiff, 6);
-    Process::invertFilter(YMean, YDiff, Y);
+    bitvector.erase(bitvector.begin(), bitvector.begin() + Process::invertHuffman(bitvector, YQ, width, height, 8));
+    //bitvector.erase(bitvector.begin(), bitvector.begin() + Process::invertArithmeticEncoding(bitvector, YQ, width / 2, height / 2, 8, 3, 16));
+    Process::invertGrayCoding(YQ, YQ);
+    Process::Unquantify(YQ, Y, 8);
+    Process::invertWaveletTransform(Y, Y, 1);
     map = Y;
 }
 

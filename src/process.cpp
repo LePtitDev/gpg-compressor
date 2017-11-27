@@ -562,3 +562,47 @@ unsigned int Process::invertArithmeticEncoding(const std::vector<bool>& in, Bitm
     }
     return count;
 }
+
+void Process::waveletTransform(const Bitmap<float>& in, Bitmap<float>& out, unsigned int pass) {
+    if (in.width() != out.width() || in.height() != out.height())
+        out.resize(in.width(), in.height());
+    Bitmap<float> L, R, LU, LD, RU, RD;
+    filterMean(in, L);
+    filterSub(in, R);
+    for (unsigned int i = 0, h = R.height(); i < h; i++) {
+        for (unsigned int j = 0, w = R.width(); j < w; j++) {
+            R[i][j] = std::min(254.0f, std::max(1.0f, R[i][j]));
+        }
+    }
+    filterMeanUp(L, LU);
+    filterUp(L, LD);
+    filterMeanUp(R, RU);
+    filterUp(R, RD);
+    for (unsigned int i = 0, h = LD.height(); i < h; i++) {
+        for (unsigned int j = 0, w = LD.width(); j < w; j++) {
+            LD[i][j] = std::min(254.0f, std::max(1.0f, LD[i][j]));
+            RD[i][j] = std::min(254.0f, std::max(1.0f, RD[i][j]));
+        }
+    }
+    if (pass > 1)
+        waveletTransform(LU, LU, pass - 1);
+    out.fill(LU);
+    out.fill(LD, 0, in.height() / 2);
+    out.fill(RU, in.width() / 2, 0);
+    out.fill(RD, in.width() / 2, in.height() / 2);
+}
+
+void Process::invertWaveletTransform(const Bitmap<float>& in, Bitmap<float>& out, unsigned int pass) {
+    if (in.width() != out.width() || in.height() != out.height())
+        out.resize(in.width(), in.height());
+    Bitmap<float> L, R, LU, LD, RU, RD;
+    in.copy(LU, in.width() / 2, in.height() / 2);
+    if (pass > 1)
+        invertWaveletTransform(LU, LU, pass - 1);
+    in.copy(LD, in.width() / 2, in.height() / 2, 0, in.height() / 2);
+    in.copy(RU, in.width() / 2, in.height() / 2, in.width() / 2);
+    in.copy(RD, in.width() / 2, in.height() / 2, in.width() / 2, in.height() / 2);
+    invertFilterUp(LU, LD, L);
+    invertFilterUp(RU, RD, R);
+    invertFilter(L, R, out);
+}

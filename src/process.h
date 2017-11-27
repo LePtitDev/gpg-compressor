@@ -65,6 +65,10 @@ namespace Process {
 
     unsigned int invertArithmeticEncoding(const std::vector<bool>& in, Bitmap<unsigned char>& out, unsigned int width, unsigned int height, unsigned int N = 8, unsigned int NMAX = 2, unsigned int PSIZE = 8);
 
+    void waveletTransform(const Bitmap<float>& in, Bitmap<float>& out, unsigned int pass = 1);
+    
+    void invertWaveletTransform(const Bitmap<float>& in, Bitmap<float>& out, unsigned int pass = 1);
+
 }
 
 #endif // PROCESS_H

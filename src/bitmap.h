@@ -618,7 +618,7 @@ public:
         }
     }
 
-    void copy(Bitmap& map, unsigned int width, unsigned int height, unsigned int offset_j = 0, unsigned int offset_i = 0) {
+    void copy(Bitmap& map, unsigned int width, unsigned int height, unsigned int offset_j = 0, unsigned int offset_i = 0) const {
         if (map.width() != width || map.height() != height)
             map.resize(width, height);
         for (int i = 0, _h = ((int)height <= ((int)h - (int)offset_i) ? (int)height : (int)h - (int)offset_i); i < _h; i++) {
